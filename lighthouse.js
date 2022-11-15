@@ -1,8 +1,13 @@
+
 require('dotenv').config();
+const fetch = require("node-fetch")
 const psi = require('psi');
 const csv = require("csvtojson");
 const { BlobServiceClient, StorageSharedKeyCredential } = require("@azure/storage-blob");
 const fs = require('fs');
+const { env } = require('process');
+const { stringify } = require('querystring');
+
 
 
 
@@ -75,43 +80,66 @@ const fs = require('fs');
 
                 if (!doesExist) {
 
-                    await psi(company.web, {
-                        nokey: insightAPIKey,
-                        strategy: 'desktop',
-                        format: 'json'
-                    }).then( async (data) => {
+                    function setUpQuery() {
+                        const api = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
+                        const parameters = {
+                            url: encodeURIComponent('http://' + company.web)
+                        };
+                    
+                        let query = `${api}?`;
+                        for (key in parameters) {
+                        query += `${key}=${parameters[key]}`;
+                        }
+                    
+                        // Add API key at the end of the query
+                        query += "&key=" + insightAPIKey
+                    
+                        return query;
+                    }
+                    
+                    const url = setUpQuery();
+                    await fetch(url)
+                    .then (async response => {
+                        let rescode = response.status
 
-                        crashCounter = 0;
+                        if (rescode >= 200 && rescode <= 299) {
+                            let res = await response.json();
+                            crashCounter = 0;
 
-                        console.log('successfully analysed webpage..');
+                            console.log('successfully analysed webpage..');
+                            await newBlob.upload(JSON.stringify(res), JSON.stringify(res).length);
 
-                        await newBlob.upload(JSON.stringify(data), JSON.stringify(data).length);
+                            /*
+                            fs.writeFile(`${foldername_output}/${company.orgnr}.json`, JSON.stringify(res), err => {
+                                if (err) console.error(err);
+                            });
+                            */
 
-                        /*
-                        fs.writeFile(`${foldername_output}/${company.orgnr}.json`, JSON.stringify(data), err => {
-                            if (err) console.error(err);
-                        });
-                        */
+                        } 
+                        else{
+                            console.log('failed to analyse webpage.. due to:', rescode);
+
+                            const failedOutput = '\n' + Object.values(company).toString() + ';' + rescode;
+
+                            fs.appendFile(`${foldername_output}/${filename_errors}`, failedOutput, 'utf-8', err => {
+                                if (err) console.error(err);
+                            });
+
+                            if (rescode === 429) {
+                                crashCounter++;
+                            };
+                        }
+
 
                     }).catch( async (err) => {
-
-                        const failedOutput = '\n' + Object.values(company).toString() + ';' + err.code;
-
-                        fs.appendFile(`${foldername_output}/${filename_errors}`, failedOutput, 'utf-8', err => {
-                            if (err) console.error(err);
-                        });
-
-                        console.log('failed to analyse webpage.. due to:', err.code);
-
-                        if (err.code === 429) {
-                            crashCounter += 1;
-                        };
-
+                        console.log(err)
                     })
-            };
+                }else{
+                    console.log("File already exists in azure, skipping....")
+                };
             }));
 
-            if (crashCounter > 8) {
+            if (crashCounter > 5) {
 
                 await new Promise(resolve => setTimeout(resolve, 300000)); // PAUSE PROGRAM
 
