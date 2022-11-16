@@ -26,7 +26,9 @@ function createAzureBlobClient(
 
   const containerClient = blobServiceClient.getContainerClient(containerName);
 
-  const blobClient = containerClient.getBlobClient(blobName);
+  const blobClient = containerClient.getBlockBlobClient(blobName);
+
+  //const blobClient = containerClient.getBlobClient(blobName);
 
   return blobClient;
 }
