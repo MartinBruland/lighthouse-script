@@ -1,6 +1,8 @@
 node_modules
 npm-debug.log
 datasplit.js
-data.csv
-output
 .env
+
+failed
+dataset
+report_*

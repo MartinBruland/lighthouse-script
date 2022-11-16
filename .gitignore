@@ -1,4 +1,7 @@
 .env
+.DS_Store
 node_modules
 
-.DS_Store
+failed
+dataset
+report_*
