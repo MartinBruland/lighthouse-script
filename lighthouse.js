@@ -249,11 +249,10 @@ function addDirectory(title) {
                   azAccountName,
                   azAccountKey,
                   azContainer,
-                  filepath_report_original,
-                  filepath_downloaded_data_csv
+                  filepath_report_original
                 );
-                //await blobOriginalJSON.upload(originalDataset, originalDataset.length);
-                writeToLocalFile(originalDataset, filepath_report_original);
+                await blobOriginalJSON.upload(originalDataset, originalDataset.length);
+                //writeToLocalFile(originalDataset, filepath_report_original);
 
                 // UPLOAD JSON EXTRACT OF REPORT.
                 const filepath_report_extract_json = `${folderResultsJSON}/${companyID}.json`;
@@ -261,11 +260,10 @@ function addDirectory(title) {
                   azAccountName,
                   azAccountKey,
                   azContainer,
-                  filepath_report_extract_json,
-                  filepath_downloaded_data_csv
+                  filepath_report_extract_json
                 );
-                //await blobExtractJSON.upload(extractedDatasetJSON, extractedDatasetJSON.length);
-                writeToLocalFile(extractedDatasetJSON, filepath_report_extract_json);
+                await blobExtractJSON.upload(extractedDatasetJSON, extractedDatasetJSON.length);
+                //writeToLocalFile(extractedDatasetJSON, filepath_report_extract_json);
 
                 // UPLOAD CSV EXTRACT OF REPORT.
                 if (!fs.existsSync(filepath_report_extract_csv)) {
@@ -302,7 +300,7 @@ function addDirectory(title) {
             filepath_report_extract_csv,
         );
 
-        await blobExtractCSV.upload(filepath_report_extract_csv, filepath_report_extract_csv.length);
+        await blobExtractCSV.uploadFile(filepath_report_extract_csv);
 
 
         // UPLOAD DATASET OF FAILED PAGES FROM ./failedPages/
@@ -313,7 +311,7 @@ function addDirectory(title) {
             filepath_errors_csv
         );
 
-        await failedBlob.uploadFile(filepath_errors_csv, filepath_errors_csv.length);
+        await failedBlob.uploadFile(filepath_errors_csv);
 
     });
 })();
