@@ -13,7 +13,6 @@ function createAzureBlobClient(
   containerName,
   blobName
 ) {
-
   const sharedKeyCredential = new StorageSharedKeyCredential(
     accountName,
     accountKey
@@ -28,14 +27,11 @@ function createAzureBlobClient(
 
   const blobClient = containerClient.getBlockBlobClient(blobName);
 
-  //const blobClient = containerClient.getBlobClient(blobName);
-
   return blobClient;
 }
 
 async function runLighthouseAnalysis(websiteURL, apiKey) {
   return new Promise((resolve, reject) => {
-
     const apiURL = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed";
 
     const urlToAnalyse = "http://" + websiteURL;
@@ -69,79 +65,73 @@ async function runLighthouseAnalysis(websiteURL, apiKey) {
 }
 
 function extractFromLighthouseReport(report, format) {
-
   const websiteURL = report.lighthouseResult.requestedUrl;
   const categories = report.lighthouseResult.categories; // Inneholder performance, accessibility, seo, best_practices og pwa..
   const audits = report.lighthouseResult.audits; // Inneholder begrunnelser..
 
   switch (format) {
-    case 'json':
-        
-        let output = {
-            url: websiteURL,
-            results: [],
-          };
-        
-          Object.entries(categories).map((item) => {
-        
-            const value = item[1];
-        
-            const categoryResults = {
-              categoryTitle: value.title,
-              categoryScore: value.score,
-              categoryMetrics: [],
-            };
-        
-            value.auditRefs.forEach((audit) => {
-              const auditID = audit.id;
-              const auditWeight = audit.weight;
-        
-              Object.entries(audits).map((audit) => {
-                // Iterate all metrics + results..
-        
-                const lookupAuditID = audit[1].id;
-                const lookupAuditTitle = audit[1].title;
-                const lookupAuditDescription = audit[1].description;
-                const lookupAuditDisplayValue = audit[1].displayValue;
-                const lookupAuditScore = audit[1].score;
-        
-                if (auditID === lookupAuditID) {
-                  categoryResults.categoryMetrics.push({
-                    metricTitle: lookupAuditTitle,
-                    metricDescription: lookupAuditDescription,
-                    metricValue: lookupAuditDisplayValue,
-                    metricWeight: auditWeight,
-                    metricScore: lookupAuditScore,
-                  });
-                }
-              });
-            });
-        
-            output.results.push(categoryResults);
-          });
-        
-          return output;
+    case "json":
+      let output = {
+        url: websiteURL,
+        results: [],
+      };
 
-    case 'csv':
+      Object.entries(categories).map((item) => {
+        const value = item[1];
 
-        const csvOutput = {
-            columns: "url,performance_score,accessibility_score,seo_score,best_practices_score,pwa_score",
-            row: websiteURL
+        const categoryResults = {
+          categoryTitle: value.title,
+          categoryScore: value.score,
+          categoryMetrics: [],
         };
 
-        Object.entries(categories).map((item) => {
-        
-            csvOutput.row += ',';
-            csvOutput.row += item[1].score;
-            
+        value.auditRefs.forEach((audit) => {
+          const auditID = audit.id;
+          const auditWeight = audit.weight;
+
+          Object.entries(audits).map((audit) => {
+            // Iterate all metrics + results..
+
+            const lookupAuditID = audit[1].id;
+            const lookupAuditTitle = audit[1].title;
+            const lookupAuditDescription = audit[1].description;
+            const lookupAuditDisplayValue = audit[1].displayValue;
+            const lookupAuditScore = audit[1].score;
+
+            if (auditID === lookupAuditID) {
+              categoryResults.categoryMetrics.push({
+                metricTitle: lookupAuditTitle,
+                metricDescription: lookupAuditDescription,
+                metricValue: lookupAuditDisplayValue,
+                metricWeight: auditWeight,
+                metricScore: lookupAuditScore,
+              });
+            }
+          });
         });
 
-        return csvOutput
-  
-    default:
-        break;
-  }
+        output.results.push(categoryResults);
+      });
 
+      return output;
+
+    case "csv":
+      const csvOutput = {
+        columns:
+          "url,performance_score,accessibility_score,seo_score,best_practices_score,pwa_score",
+        row: websiteURL,
+      };
+
+      Object.entries(categories).map((item) => {
+        csvOutput.row += ",";
+        csvOutput.row += item[1].score;
+      });
+
+      return csvOutput;
+
+    default:
+      break;
+  }
 }
 
 function writeToLocalFile(jsonString, localFilePath) {
@@ -163,7 +153,6 @@ function addDirectory(title) {
 }
 
 (async () => {
-
   // GET DATA FROM ENVIRONMENT VARIABLES.
   const azAccountName = process.env.AZ_ACCOUNT;
   const azAccountKey = process.env.AZ_KEY;
@@ -211,7 +200,6 @@ function addDirectory(title) {
   csv()
     .fromFile(filepath_downloaded_data_csv)
     .then(async (content) => {
-
       // KEEP TRACK OF PROGRESS.
       let progress = 0;
       const totalAmount = content.length;
@@ -222,7 +210,7 @@ function addDirectory(title) {
       for (let i = 0; i < totalAmount; i += batchSize) {
         const batch = content.slice(i, i + batchSize);
         batches.push(batch);
-      };
+      }
 
       // RUN THROUGH BATCHES.
       for (const batch of batches) {
@@ -238,12 +226,10 @@ function addDirectory(title) {
             // RUN ANALYSIS
             await runLighthouseAnalysis(companyURL, insightAPIKey)
               .then(async (report) => {
-
                 const originalDataset = JSON.stringify(report);
-                const jsonExtract = extractFromLighthouseReport(report, 'json');
+                const jsonExtract = extractFromLighthouseReport(report, "json");
                 const extractedDatasetJSON = JSON.stringify(jsonExtract);
-                const csvExtract = extractFromLighthouseReport(report, 'csv');
-                
+                const csvExtract = extractFromLighthouseReport(report, "csv");
 
                 // UPLOAD ORIGINAL REPORT.
                 const filepath_report_original = `${folderOriginalResultsJSON}/${companyID}.json`;
@@ -253,7 +239,10 @@ function addDirectory(title) {
                   azContainer,
                   filepath_report_original
                 );
-                await blobOriginalJSON.upload(originalDataset, originalDataset.length);
+                await blobOriginalJSON.upload(
+                  originalDataset,
+                  originalDataset.length
+                );
                 //writeToLocalFile(originalDataset, filepath_report_original);
 
                 // UPLOAD JSON EXTRACT OF REPORT.
@@ -264,56 +253,55 @@ function addDirectory(title) {
                   azContainer,
                   filepath_report_extract_json
                 );
-                await blobExtractJSON.upload(extractedDatasetJSON, extractedDatasetJSON.length);
+                await blobExtractJSON.upload(
+                  extractedDatasetJSON,
+                  extractedDatasetJSON.length
+                );
                 //writeToLocalFile(extractedDatasetJSON, filepath_report_extract_json);
 
                 // UPLOAD CSV EXTRACT OF REPORT.
                 if (!fs.existsSync(filepath_report_extract_csv)) {
-                    const insertColumns = csvExtract.columns;
-                    writeToLocalFile(insertColumns, filepath_report_extract_csv);
-                };
+                  const insertColumns = csvExtract.columns;
+                  writeToLocalFile(insertColumns, filepath_report_extract_csv);
+                }
                 const insertRow = `\n${csvExtract.row}`;
                 appendToLocalFile(insertRow, filepath_report_extract_csv);
-
               })
               .catch((err) => {
-
                 // STORE FAILED PAGES IN CSV.
                 if (!fs.existsSync(filepath_errors_csv)) {
-                  const insertColumns = Object.keys(content[0]).toString() + ",error_msg";
+                  const insertColumns =
+                    Object.keys(content[0]).toString() + ",error_msg";
                   writeToLocalFile(insertColumns, filepath_errors_csv);
                 }
 
-                const insertRow = "\n" + Object.values(company).toString() + "," + err;
+                const insertRow =
+                  "\n" + Object.values(company).toString() + "," + err;
                 appendToLocalFile(insertRow, filepath_errors_csv);
-
               });
           })
         );
       }
     })
     .then(async () => {
+      // UPLOAD CSV EXTRACT.
+      const blobExtractCSV = createAzureBlobClient(
+        azAccountName,
+        azAccountKey,
+        azContainer,
+        filepath_report_extract_csv
+      );
 
-        // UPLOAD CSV EXTRACT.
-        const blobExtractCSV = createAzureBlobClient(
-            azAccountName,
-            azAccountKey,
-            azContainer,
-            filepath_report_extract_csv,
-        );
+      await blobExtractCSV.uploadFile(filepath_report_extract_csv);
 
-        await blobExtractCSV.uploadFile(filepath_report_extract_csv);
+      // UPLOAD DATASET OF FAILED PAGES FROM ./failedPages/
+      const failedBlob = createAzureBlobClient(
+        azAccountName,
+        azAccountKey,
+        azContainer,
+        filepath_errors_csv
+      );
 
-
-        // UPLOAD DATASET OF FAILED PAGES FROM ./failedPages/
-        const failedBlob = createAzureBlobClient(
-            azAccountName,
-            azAccountKey,
-            azContainer,
-            filepath_errors_csv
-        );
-
-        await failedBlob.uploadFile(filepath_errors_csv);
-
+      await failedBlob.uploadFile(filepath_errors_csv);
     });
 })();
